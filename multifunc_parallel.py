@@ -2,8 +2,26 @@
 
 import os
 from multiprocessing import Process
+from subprocess import Popen, PIPE, STDOUT
 
 import cv2
+
+def extract_frames_ffmpeg(video_path, folder_path):
+    print("Extracting frames from {}".format(video_path))
+
+    abs_video_path = os.path.abspath(video_path)
+    folder_path = "data/{:s}".format(folder_path)
+
+    command = "ffmpeg -hide_banner -loglevel error -i {:s} {:s}/out-%04d.jpg".format(abs_video_path, folder_path)
+
+    # Execute Command
+    process = Popen(command, stdout=PIPE, shell=True, stderr=STDOUT, bufsize=1, close_fds=True)
+    for line in iter(process.stdout.readline, b''):
+        print(line.rstrip().decode('utf-8'))
+    process.stdout.close()
+    process.wait()
+
+    print("Extracting frames from {:s} done!".format(abs_video_path))
 
 def extract_frames_opencv(video_path, folder_name):
     print("Extracting frames from {}".format(video_path))
