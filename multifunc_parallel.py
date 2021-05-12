@@ -32,9 +32,9 @@ def find_divisibles(inrange, div_by):
     print("Done w/ nums in range {} divisible by {}".format(inrange, div_by))
 
 if __name__ == "__main__":
-    process1 = Process(target=extract_frames_opencv, args=('/home/htut/Downloads/Video/inferenced_videos/1.mp4', '1',))
-    process2 = Process(target=extract_frames_opencv, args=('/home/htut/Downloads/Video/inferenced_videos/2.mp4', '2',))
-    process3 = Process(target=extract_frames_opencv, args=('/home/htut/Downloads/Video/inferenced_videos/3.mp4', '3',))
+    process1 = Process(target=extract_frames_opencv, args=('videos/1.mp4', '1',))
+    process2 = Process(target=extract_frames_opencv, args=('videos/2.mp4', '2',))
+    process3 = Process(target=extract_frames_opencv, args=('vidoes/3.mp4', '3',))
     process4 = Process(target=find_divisibles, args=(500, 3,))
 
     process1.start()

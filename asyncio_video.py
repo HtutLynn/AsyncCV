@@ -20,13 +20,13 @@ async def extract_frames_ffmpeg(video_path, folder_name):
     print("Extracting frames from {:s} done!".format(abs_video_path))
 
 async def main():
-    extract1 = loop.create_task(extract_frames_ffmpeg(video_path="/home/htut/Downloads/Video/inferenced_videos/1.mp4",
+    extract1 = loop.create_task(extract_frames_ffmpeg(video_path="videos/1.mp4",
                                                       folder_name="1"))
-    extract2 = loop.create_task(extract_frames_ffmpeg(video_path="/home/htut/Downloads/Video/inferenced_videos/2.mp4",
+    extract2 = loop.create_task(extract_frames_ffmpeg(video_path="videos/2.mp4",
                                                       folder_name="2"))
-    extract3 = loop.create_task(extract_frames_ffmpeg(video_path="/home/htut/Downloads/Video/inferenced_videos/3.mp4",
+    extract3 = loop.create_task(extract_frames_ffmpeg(video_path="videos/3.mp4",
                                                       folder_name="3"))
-    extract4 = loop.create_task(extract_frames_ffmpeg(video_path="/home/htut/Downloads/Video/inferenced_videos/4.mp4",
+    extract4 = loop.create_task(extract_frames_ffmpeg(video_path="videos/4.mp4",
                                                       folder_name="4"))
 
     await asyncio.wait([extract1, extract2, extract3, extract4])

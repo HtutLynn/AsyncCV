@@ -19,14 +19,14 @@ def extract_frames_ffmpeg(video_path, folder_name):
     print("Extracting frames from {:s} done!".format(abs_video_path))
 
 def main():
-    extract_frames_ffmpeg(video_path="/home/htut/Downloads/Video/inferenced_videos/1.mp4",
-                                                      folder_name="1")
-    extract_frames_ffmpeg(video_path="/home/htut/Downloads/Video/inferenced_videos/2.mp4",
-                                                      folder_name="2")
-    extract_frames_ffmpeg(video_path="/home/htut/Downloads/Video/inferenced_videos/3.mp4",
-                                                      folder_name="3")
-    extract_frames_ffmpeg(video_path="/home/htut/Downloads/Video/inferenced_videos/4.mp4",
-                                                      folder_name="4")
+    extract_frames_ffmpeg(video_path="videos/1.mp4",
+                          folder_name="1")
+    extract_frames_ffmpeg(video_path="videos/2.mp4",
+                          folder_name="2")
+    extract_frames_ffmpeg(video_path="videos/3.mp4",
+                          folder_name="3")
+    extract_frames_ffmpeg(video_path="videos/4.mp4",
+                          folder_name="4")
 
 if __name__ == "__main__":
     main()

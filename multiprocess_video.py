@@ -34,9 +34,9 @@ def extract(infos):
 
 if __name__ == "__main__":
 
-    infos = [["/home/htut/Downloads/Video/inferenced_videos/1.mp4", "1"],
-             ["/home/htut/Downloads/Video/inferenced_videos/2.mp4", "2"],
-             ["/home/htut/Downloads/Video/inferenced_videos/3.mp4", "3"],
-             ["/home/htut/Downloads/Video/inferenced_videos/4.mp4", "4"]]
+    infos = [["videos/1.mp4", "1"],
+             ["videos/2.mp4", "2"],
+             ["videos/3.mp4", "3"],
+             ["videos/4.mp4", "4"]]
 
     extract(infos=infos)
