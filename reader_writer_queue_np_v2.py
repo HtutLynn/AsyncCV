@@ -148,10 +148,23 @@ def batch_multiplex_proc(first_queue, second_queue):
 
     # make a batch numpy array and save it as a npy file
     count = 0
+    first = True
+    second = True
+
     while True:
         # get data from noth queue simultaneously
-        first_frame = first_queue.get()
-        second_frame = second_queue.get()
+        if first and second:
+            first_frame = first_queue.get()
+            second_frame = second_queue.get()
+        elif first and not second:
+            first_frame = first_queue.get()
+            second_frame = "DONE"
+        elif not first and second:
+            first_frame = "DONE"
+            second_frame = second_queue.get()
+        else:
+            first_frame = "DONE"
+            second_frame = "DONE"
 
         # Configure npy file path
         npy_path = "%s/%s/out-%04d.npy" % ("data", "queue", count)
@@ -167,6 +180,7 @@ def batch_multiplex_proc(first_queue, second_queue):
             batch_array = first_frame
             np.save(npy_path, batch_array)
             count += 1
+            second = False
             print("Single")
             print("Reader first queue length : {}".format(first_queue.qsize()))
             print("Reader second queue length : {}".format(second_queue.qsize()))
@@ -174,6 +188,7 @@ def batch_multiplex_proc(first_queue, second_queue):
             batch_array = second_frame
             np.save(npy_path, batch_array)
             count += 1
+            first = False
             print("Single")
             print("Reader first queue length : {}".format(first_queue.qsize()))
             print("Reader second queue length : {}".format(second_queue.qsize()))
