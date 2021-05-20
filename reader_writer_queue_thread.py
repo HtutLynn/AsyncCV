@@ -1,17 +1,17 @@
 """
-https://stackoverflow.com/questions/11515944/how-to-use-multiprocessing-queue-in-python
+https://stackoverflow.com/questions/60117701/multiple-rtsps-receive-method
 
 1. Classic Producer - Consumer problem (https://en.wikipedia.org/wiki/Producer%E2%80%93consumer_problem)
-2. Python multiprocessing
-3. Pytorch multiprocessing
-4. Bounded Buffer problem
+2. Python multithreading (Video/Camera reader objects)
+2. Bounded Buffer problem
 """
 
 import os
-import sys
 import time
+import threading
+import subprocess as sp
+from queue import Queue
 from typing import List, Tuple
-from multiprocessing import Process, Queue
 
 import cv2
 import numpy as np
@@ -97,53 +97,33 @@ class Preprocess(object):
 
         return image, new_w, new_h, old_w, old_h, padding_w, padding_h,
 
-    def __call__(self, img):
-        """
-        Preprocess an image for YOLOv5 TensorRT model inferencing.
-        Parameters
-        ----------
-        img         : numpy array
-                      In BGR format
-                      uint8 numpy array of shape (img_h, img_w, 3)
+
+class VideoReader(threading.Thread):
+    def __init__(self, video, queue):
+        super().__init__()
+        self.video_path = os.path.abspath(video)
+        self.vid_name = os.path.splitext(self.video_path)[0].split("/")[-1]
+        self.vidcap = cv2.VideoCapture(self.video_path)
+
+        self.queue = queue
+
+        self.preprocess_fn = Preprocess(input_size=640)
+
+    def run(self):
         
-        Returns
-        -------
-        img         : numpy array
-                      preprocessed image
-                      float32 numpy array of shape (3, H, W)
-        metas       : list
-                      list containing additional informations about the image
-        """
-        # resize the image and pad the image by maintaining contrast ratio
-        img_meta = self._aspectaware_resize_padding(image=img, width=self.input_size, 
-                                            height=self.input_size, interpolation=cv2.INTER_LINEAR, means=self.fill_value)
+        count = 0
+        while True:
+            success, frame = self.vidcap.read()
+            if not success:
+                self.queue.put("DONE")
+                break
+            else:
+                np_frame = self.preprocess_fn(frame)
+                self.queue.put(np_frame)
+                print("Writer {} Queue Length : {}".format(self.vidname, self.queue.qsize()))
 
-        img = np.transpose(img_meta[0], (2, 0, 1)).astype(np.float32)
-        img = np.expand_dims(img, axis=0)
-        img /= 255.0
 
-        return img
-
-def preprocessor_proc(video, queue):
-    # Write the frames, read with opencv, to the queue
-    video_path = os.path.abspath(video)
-
-    vidcap = cv2.VideoCapture(video_path)
-    vidname = os.path.splitext(video_path)[0].split("/")[-1]
-    # create an instance of the preprocess class
-    preprocessor = Preprocess(input_size=640) 
-
-    while True: 
-        success, frame = vidcap.read()
-        if not success:
-            queue.put("DONE")
-            break
-        else:
-            np_frame = preprocessor(frame)
-            queue.put(np_frame)
-            print("Writer {} Queue Length : {}".format(vidname, queue.qsize()))
-
-def batch_multiplex_proc(first_queue, second_queue):
+def batch_multiplex(first_queue, second_queue):
     
     # Read from multiple queues, this will be spawned as a seperate process
 
@@ -199,21 +179,19 @@ def batch_multiplex_proc(first_queue, second_queue):
         else:
             break
 
+if __name__ == "__main__":
 
-if __name__=='__main__':
-    fqueue = Queue()  # preprocessor_proc() writes to this queue associated with its video stream from _this_ process    
-    squeue = Queue()  # preprocessor_proc() writes to this queue associated with its video stream from _this_ process    
+    first_queue = Queue()
+    second_queue = Queue()
 
-    # Reader processes that write into it's respective queues
-    stream1_p = Process(target=preprocessor_proc, args=("videos/1.mp4", fqueue, )) # send video path and queue as args to proc
-    stream2_p = Process(target=preprocessor_proc, args=("videos/2.mp4", squeue, )) # send video path and queue as args to proc
-    stream1_p.daemon = True
-    stream2_p.daemon = True
+    vid_reader1 = VideoReader(video="videos/1.mp4", queue=first_queue)
+    vid_reader2 = VideoReader(video="videos/2.mp4", queue=second_queue)
 
-    stream1_p.start() # Launch stream1 grasp/ preprocess operations as seperate python process since they are independent
-    stream2_p.start() # Launch stream1 grasp/ preprocess operations as seperate python process since they are independent
+    vid_reader1.start()
+    vid_reader2.start()
 
-    batch_multiplex_proc(fqueue, squeue)
 
-    stream1_p.join()
-    stream2_p.join()
+    batch_multiplex(first_queue=first_queue, second_queue=second_queue)
+
+    vid_reader1.join()
+    vid_reader2.join()

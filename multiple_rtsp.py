@@ -2,6 +2,7 @@ import numpy as np
 import subprocess as sp
 import threading
 import queue
+import time
 
 class CCTVReader(threading.Thread):
     def __init__(self, q, in_stream, chunk_size):
@@ -17,7 +18,7 @@ class CCTVReader(threading.Thread):
                         "-"]                # Output is a pipe
 
     def run(self):
-        pipe = sp.Popen(self.command, stdout=sp.PIPE, bufsize=1024**2*100)
+        pipe = sp.Popen(self.command, stdout=sp.PIPE, bufsize=1024**3)  # Don't use shell=True (you don't need to execute the command through the shell).
 
         # while True:
         for i in range(100):  # Read up to 100KBytes for testing
@@ -34,57 +35,40 @@ class CCTVReader(threading.Thread):
             pipe.kill()           # Kill subprocess in case of a timeout (there should be a timeout because input stream still lives).
 
 
-    def save_q_to_file(self, vid_file_name):
-        # Write data from queue to file (for testing)
-        if self.q.empty():
-            print("There is a problem (q is empty)!!!")
-        else:            
-            with open(vid_file_name, "wb") as queue_save_file:
-                while not self.q.empty():
-                    queue_save_file.write(self.q.get())
 
 #in_stream = "rtsp://xxx.xxx.xxx.xxx:xxx/Streaming/Channels/101?transportmode=multicast",
 
 #Use public RTSP Streaming for testing
-#in_stream = "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov"
+in_stream1 = "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov"
 
-#Use public RTSP Streaming for testing
-readers = {}
-queues = {}
+in_stream2 = "rtsp://wowzaec2demo.streamlock.net/vod/mp4:BigBuckBunny_115k.mov"
 
-# Read from file (for tesing)
-dict = {
-        "name1":{ "ip":"vid1.264",  "fname":"vid_from_q1.264"},
-        "name2":{ "ip":"vid2.264",  "fname":"vid_from_q2.264"},
-        "name3":{ "ip":"vid3.264",  "fname":"vid_from_q3.264"},
-        "name4":{ "ip":"vid4.264",  "fname":"vid_from_q4.264"},
-        "name5":{ "ip":"vid5.264",  "fname":"vid_from_q5.264"},
-        "name6":{ "ip":"vid6.264",  "fname":"vid_from_q6.264"},
-        "name7":{ "ip":"vid7.264",  "fname":"vid_from_q7.264"},
-        "name8":{ "ip":"vid8.264",  "fname":"vid_from_q8.264"},
-        "name9":{ "ip":"vid9.264",  "fname":"vid_from_q9.264"},
-        "name10":{"ip":"vid10.264", "fname":"vid_from_q10.264"},
-        "name11":{"ip":"vid11.264", "fname":"vid_from_q11.264"},
-        "name12":{"ip":"vid12.264", "fname":"vid_from_q12.264"},
-        "name13":{"ip":"vid13.264", "fname":"vid_from_q13.264"},
-        "name14":{"ip":"vid14.264", "fname":"vid_from_q14.264"},
-        "name15":{"ip":"vid15.264", "fname":"vid_from_q15.264"}
-        }
 
-for key in dict:
-    ip = dict[key]["ip"]
-    name = key
-    q = queue.Queue()
-    queues[name] = q
-    cctv_reader = CCTVReader(q, ip, 8192)
-    readers[name] = cctv_reader
-    cctv_reader.start()
+q1 = queue.Queue()
+q2 = queue.Queue()
 
-# Wait for all threads to end
-for key in readers:
-    readers[key].join()
+cctv_reader1 = CCTVReader(q1, in_stream1, 1024)  # First stream 
+cctv_reader2 = CCTVReader(q2, in_stream2, 2048)  # Second stream
 
-# Save data for testing
-for key in readers:
-    fine_name = dict[key]["fname"]
-    readers[key].save_q_to_file(fine_name)
+cctv_reader1.start()
+time.sleep(5) # Wait 5 seconds (for testing).
+cctv_reader2.start()
+
+cctv_reader1.join()
+cctv_reader2.join()
+
+if q1.empty():
+    print("There is a problem (q1 is empty)!!!")
+else:
+    # Write data from queue to file vid_from_queue1.264 (for testing)
+    with open("vid_from_q1.264", "wb") as queue_save_file:
+        while not q1.empty():
+            queue_save_file.write(q1.get())
+
+if q2.empty():
+    print("There is a problem (q2 is empty)!!!")
+else:
+    # Write data from queue to file vid_from_queue2.264 (for testing)
+    with open("vid_from_q2.264", "wb") as queue_save_file:
+        while not q2.empty():
+            queue_save_file.write(q2.get())
