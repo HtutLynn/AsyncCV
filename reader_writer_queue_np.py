@@ -133,11 +133,13 @@ def preprocessor_proc(queue):
     while True: 
         frame = queue.get()
         if not isinstance(frame, np.ndarray):
+            print("preprocessor : {}".format(frame))
             break
         else:
             npy = preprocessor(frame)
             npy_path = "%s/%s/out-%04d.npy" % ("data", "queue", count)
             np.save(npy_path, npy)
+            print("Reader Queue Lenght : {}".format(queue.qsize()))
             count += 1
 
 def frames_grasp_proc(video ,queue):
@@ -155,7 +157,7 @@ def frames_grasp_proc(video ,queue):
             break
         else:
             queue.put(image)
-            print("Current Queue Length : {}".format(queue.qsize()))
+            print("Writer Queue Length : {}".format(queue.qsize()))
 
 if __name__=='__main__':
     pqueue = Queue()  # frames_grasp_proc() writes to pqueue from _this_ process
