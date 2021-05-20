@@ -155,7 +155,7 @@ def frames_grasp_proc(video ,queue):
             break
         else:
             queue.put(image)
-            print("Current Queue Length : {}".format(len(queue)))
+            print("Current Queue Length : {}".format(queue.qsize()))
 
 if __name__=='__main__':
     pqueue = Queue()  # frames_grasp_proc() writes to pqueue from _this_ process
