@@ -129,6 +129,7 @@ def preprocessor_proc(video, queue):
     video_path = os.path.abspath(video)
 
     vidcap = cv2.VideoCapture(video_path)
+    vidname = os.path.splitext(video_path)[0].split("/")[-1]
     # create an instance of the preprocess class
     preprocessor = Preprocess(input_size=640) 
 
@@ -140,7 +141,7 @@ def preprocessor_proc(video, queue):
         else:
             np_frame = preprocessor(frame)
             queue.put(np_frame)
-            # print("Writer Queue Length : {}".format(queue.qsize()))
+            print("Writer {} Queue Length : {}".format(vidname, queue.qsize()))
 
 def batch_multiplex_proc(first_queue, second_queue):
     
@@ -171,6 +172,7 @@ def batch_multiplex_proc(first_queue, second_queue):
 
         if isinstance(first_frame, np.ndarray) and isinstance(second_frame, np.ndarray):
             batch_array = np.vstack((first_frame, second_frame))
+            print("dimensions : {}".format(batch_array.shape))
             np.save(npy_path, batch_array)
             count += 1
             print("Batch")
@@ -178,6 +180,7 @@ def batch_multiplex_proc(first_queue, second_queue):
             print("Reader second queue length : {}".format(second_queue.qsize()))
         elif isinstance(first_frame, np.ndarray) and second_frame == "DONE":
             batch_array = first_frame
+            print("dimensions : {}".format(batch_array.shape))
             np.save(npy_path, batch_array)
             count += 1
             second = False
@@ -186,6 +189,7 @@ def batch_multiplex_proc(first_queue, second_queue):
             print("Reader second queue length : {}".format(second_queue.qsize()))
         elif isinstance(second_frame, np.ndarray) and first_frame == "DONE":
             batch_array = second_frame
+            print("dimensions : {}".format(batch_array.shape))
             np.save(npy_path, batch_array)
             count += 1
             first = False
