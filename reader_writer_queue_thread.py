@@ -97,6 +97,33 @@ class Preprocess(object):
 
         return image, new_w, new_h, old_w, old_h, padding_w, padding_h,
 
+    def __call__(self, img):
+        """
+        Preprocess an image for YOLOv5 TensorRT model inferencing.
+        Parameters
+        ----------
+        img         : numpy array
+                      In BGR format
+                      uint8 numpy array of shape (img_h, img_w, 3)
+        
+        Returns
+        -------
+        img         : numpy array
+                      preprocessed image
+                      float32 numpy array of shape (3, H, W)
+        metas       : list
+                      list containing additional informations about the image
+        """
+        # resize the image and pad the image by maintaining contrast ratio
+        img_meta = self._aspectaware_resize_padding(image=img, width=self.input_size, 
+                                            height=self.input_size, interpolation=cv2.INTER_LINEAR, means=self.fill_value)
+
+        img = np.transpose(img_meta[0], (2, 0, 1)).astype(np.float32)
+        img = np.expand_dims(img, axis=0)
+        img /= 255.0
+
+        return img
+
 
 class VideoReader(threading.Thread):
     def __init__(self, video, queue):
