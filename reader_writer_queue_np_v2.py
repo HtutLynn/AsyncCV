@@ -124,47 +124,74 @@ class Preprocess(object):
 
         return img
 
-def preprocessor_proc(queue):
-    ## Read from the queue; this will be spawned as a seperate process
-
-    # create an instance of the preprocess class
-    preprocessor = Preprocess(input_size=640) 
-    count = 0
-    while True: 
-        frame = queue.get()
-        if not isinstance(frame, np.ndarray):
-            print("preprocessor : {}".format(frame))
-            break
-        else:
-            npy = preprocessor(frame)
-            npy_path = "%s/%s/out-%04d.npy" % ("data", "queue", count)
-            np.save(npy_path, npy)
-            print("Reader Queue Length : {}".format(queue.qsize()))
-            count += 1
-
-def frames_grasp_proc(video ,queue):
-
+def preprocessor_proc(video, queue):
     # Write the frames, read with opencv, to the queue
     video_path = os.path.abspath(video)
-    print("Extracting frames from '{}' ".format(video_path))
-    
-    vidcap = cv2.VideoCapture(video_path)
 
-    while True:
-        success, image = vidcap.read()
+    vidcap = cv2.VideoCapture(video_path)
+    # create an instance of the preprocess class
+    preprocessor = Preprocess(input_size=640) 
+
+    while True: 
+        success, frame = vidcap.read()
         if not success:
-            queue.put("None")
+            queue.put("DONE")
             break
         else:
-            queue.put(image)
-            print("Writer Queue Length : {}".format(queue.qsize()))
+            np_frame = preprocessor(frame)
+            queue.put(np_frame)
+            # print("Writer Queue Length : {}".format(queue.qsize()))
+
+def batch_multiplex_proc(first_queue, second_queue):
+    
+    # Read from multiple queues, this will be spawned as a seperate process
+
+    # make a batch numpy array and save it as a npy file
+    count = 0
+    while True:
+        # get data from noth queue simultaneously
+        first_frame = first_queue.get()
+        second_frame = second_queue.get()
+
+        # Configure npy file path
+        npy_path = "%s/%s/out-%04d.npy" % ("data", "queue", count)
+
+        if isinstance(first_frame, np.ndarray) and isinstance(second_frame, np.ndarray):
+            batch_array = np.vstack((first_frame, second_frame))
+            np.save(npy_path, batch_array)
+            count += 1
+            print("Reader first queue length : {}".format(first_queue.qsize()))
+            print("Reader second queue length : {}".format(second_frame.qsize()))
+        elif isinstance(first_frame, np.ndarray) and second_frame == "DONE":
+            batch_array = first_frame
+            np.save(npy_path, batch_array)
+            count += 1
+            print("Reader first queue length : {}".format(first_queue.qsize()))
+            print("Reader second queue length : {}".format(second_frame.qsize()))
+        elif isinstance(second_frame, np.ndarray) and first_frame == "DONE":
+            batch_array = second_frame
+            np.save(npy_path, batch_array)
+            count += 1
+            print("Reader first queue length : {}".format(first_queue.qsize()))
+            print("Reader second queue length : {}".format(second_frame.qsize()))
+        else:
+            break
+
 
 if __name__=='__main__':
-    pqueue = Queue()  # frames_grasp_proc() writes to pqueue from _this_ process
-    reader_p = Process(target=preprocessor_proc, args=((pqueue),))
-    reader_p.daemon = True
-    reader_p.start()  # Launch preprocessor_proc() as a separate python process
+    fqueue = Queue()  # preprocessor_proc() writes to this queue associated with its video stream from _this_ process    
+    squeue = Queue()  # preprocessor_proc() writes to this queue associated with its video stream from _this_ process    
 
-    frames_grasp_proc("videos/1.mp4", pqueue) # send video path and queue as args to proc
+    # Reader processes that write into it's respective queues
+    stream1_p = Process(target=preprocessor_proc, args=(("videos/1.mp4", fqueue), )) # send video path and queue as args to proc
+    stream2_p = Process(target=preprocessor_proc, args=(("videos/2.mp4", squeue), )) # send video path and queue as args to proc
+    stream1_p.daemon = True
+    stream2_p.daemon = True
 
-    reader_p.join()
+    stream1_p.start() # Launch stream1 grasp/ preprocess operations as seperate python process since they are independent
+    stream2_p.start() # Launch stream1 grasp/ preprocess operations as seperate python process since they are independent
+
+    batch_p = batch_multiplex_proc(fqueue, squeue)
+
+    stream1_p.join()
+    stream2_p.join()
