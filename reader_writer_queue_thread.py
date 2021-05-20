@@ -147,7 +147,7 @@ class VideoReader(threading.Thread):
             else:
                 np_frame = self.preprocess_fn(frame)
                 self.queue.put(np_frame)
-                print("Writer {} Queue Length : {}".format(self.vidname, self.queue.qsize()))
+                print("Writer {} Queue Length : {}".format(self.vid_name, self.queue.qsize()))
 
 
 def batch_multiplex(first_queue, second_queue):
