@@ -1,3 +1,12 @@
+"""
+https://stackoverflow.com/questions/11515944/how-to-use-multiprocessing-queue-in-python
+
+1. Classic Producer - Consumer problem (https://en.wikipedia.org/wiki/Producer%E2%80%93consumer_problem)
+2. Python multiprocessing
+3. Pytorch multiprocessing
+4. Bounded Buffer problem
+"""
+
 import os
 import sys
 import time
@@ -146,6 +155,7 @@ def frames_grasp_proc(video ,queue):
             break
         else:
             queue.put(image)
+            print("Current Queue Length : {}".format(len(queue)))
 
 if __name__=='__main__':
     pqueue = Queue()  # frames_grasp_proc() writes to pqueue from _this_ process
