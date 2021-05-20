@@ -160,20 +160,23 @@ def batch_multiplex_proc(first_queue, second_queue):
             batch_array = np.vstack((first_frame, second_frame))
             np.save(npy_path, batch_array)
             count += 1
+            print("Batch")
             print("Reader first queue length : {}".format(first_queue.qsize()))
-            print("Reader second queue length : {}".format(second_frame.qsize()))
+            print("Reader second queue length : {}".format(second_queue.qsize()))
         elif isinstance(first_frame, np.ndarray) and second_frame == "DONE":
             batch_array = first_frame
             np.save(npy_path, batch_array)
             count += 1
+            print("Single")
             print("Reader first queue length : {}".format(first_queue.qsize()))
-            print("Reader second queue length : {}".format(second_frame.qsize()))
+            print("Reader second queue length : {}".format(second_queue.qsize()))
         elif isinstance(second_frame, np.ndarray) and first_frame == "DONE":
             batch_array = second_frame
             np.save(npy_path, batch_array)
             count += 1
+            print("Single")
             print("Reader first queue length : {}".format(first_queue.qsize()))
-            print("Reader second queue length : {}".format(second_frame.qsize()))
+            print("Reader second queue length : {}".format(second_queue.qsize()))
         else:
             break
 
@@ -183,8 +186,8 @@ if __name__=='__main__':
     squeue = Queue()  # preprocessor_proc() writes to this queue associated with its video stream from _this_ process    
 
     # Reader processes that write into it's respective queues
-    stream1_p = Process(target=preprocessor_proc, args=(("videos/1.mp4", fqueue), )) # send video path and queue as args to proc
-    stream2_p = Process(target=preprocessor_proc, args=(("videos/2.mp4", squeue), )) # send video path and queue as args to proc
+    stream1_p = Process(target=preprocessor_proc, args=("videos/1.mp4", fqueue, )) # send video path and queue as args to proc
+    stream2_p = Process(target=preprocessor_proc, args=("videos/2.mp4", squeue, )) # send video path and queue as args to proc
     stream1_p.daemon = True
     stream2_p.daemon = True
 
